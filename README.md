@@ -2,10 +2,7 @@
 
 > 一个交互式可视化工具，用 22 个核心节点 + 60+ 条带实证依据的因果边，把"美联储利率→实际利率→黄金""中国信贷脉冲→大宗商品""信用利差→风险偏好"这些散落在教科书、研报、推特里的传导链路，**汇成一张可点击、可拖动、可重播的网络**。
 
-(https://wolf_cool.github.io/global-macro-interactive/) · [作者 wolf_cool](https://github.com/wolf_cool)
-
-![preview](docs/preview.png)
-
+(https://lengyuelang78-maker.github.io/global-macro-interactive/) · [作者 lengyuelang78-maker](https://github.com/wolf_cool)
 ---
 
 ## 这个工具想解决什么
@@ -146,8 +143,8 @@ python3 build.py  # 生成 global_macro_interactive.html
 如果这个工具对你有帮助，引用方式：
 
 ```
-wolf_cool. (2026). Global Macro Interactive: A Causal Network for Macro Transmission.
-https://github.com/wolf_cool/global-macro-interactive
+lengyuelang78-maker (2026). Global Macro Interactive: A Causal Network for Macro Transmission.
+https://github.com/lengyuelang78-maker/global-macro-interactive
 ```
 
 ---
@@ -158,4 +155,4 @@ MIT — 自由使用、修改、分发，但请保留原作者署名。
 
 ---
 
-*Built by [wolf_cool](https://github.com/wolf_cool)* · *Made with friction, not vibes.*
+*Built by [lengyuelang78-maker](https://github.com/lengyuelang78-maker)* · *Made with friction, not vibes.*
