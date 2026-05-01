@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全球宏观经济联动系统</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* 暗色系 - 三档背景对比明显 */
+    --bg-base: #0a0b0d;       /* 最深 - 主画布 */
+    --bg-card: #14161a;       /* 中等 - 信息面板/控制区 */
+    --bg-soft: #1c1f24;       /* 较浅 - 卡片元素 */
+    --bg-deep: #252930;       /* 最浅 - hover/选中 */
+    --ink: #f0ede4;           /* 主文字 - 暖白 */
+    --ink-soft: #c4c0b4;      /* 次文字 */
+    --ink-mute: #8a8880;      /* 辅助文字 */
+    --ink-faint: #55534d;     /* 装饰文字 */
+    --line: #2a2d33;          /* 分隔线 */
+    --line-strong: #3d4148;   /* 强分隔线 */
+    --accent: #e88862;        /* 强调色 - 暖橙 */
+    --accent-soft: rgba(232,136,98,0.15);
+    --green-up: #6dc28f;      /* 上涨 - 暖绿 */
+    --red-down: #e57373;      /* 下跌 - 暖红 */
+    --neutral: #8a8880;
+
+    /* 层级颜色 - 暗色系适配，提高饱和度 */
+    --l1: #b8a8e0;            /* 货币基础 - 紫 */
+    --l1-soft: rgba(184,168,224,0.18);
+    --l1-bg: rgba(184,168,224,0.05);
+    --l2: #7eb8d8;            /* 经济运行 - 蓝 */
+    --l2-soft: rgba(126,184,216,0.18);
+    --l2-bg: rgba(126,184,216,0.05);
+    --l3: #e8b873;            /* 政策调控 - 琥珀 */
+    --l3-soft: rgba(232,184,115,0.18);
+    --l3-bg: rgba(232,184,115,0.05);
+    --l4: #82c79f;            /* 金融市场 - 绿 */
+    --l4-soft: rgba(130,199,159,0.18);
+    --l4-bg: rgba(130,199,159,0.05);
+    --l5: #d896a3;            /* 资产定价 - 酒红 */
+    --l5-soft: rgba(216,150,163,0.18);
+    --l5-bg: rgba(216,150,163,0.05);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--bg-base);
+    color: var(--ink);
+    font-family: 'Noto Sans SC', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* ===== HEADER ===== */
+  .topbar {
+    height: 56px;
+    border-bottom: 1px solid var(--line-strong);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    background: var(--bg-card);
+    position: relative;
+    z-index: 10;
+  }
+
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+
+  .brand-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    margin-left: 12px;
+    padding: 2px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+  }
+
+  .topbar-spacer { flex: 1; }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-mute);
+  }
+
+  .scenario-pill {
+    padding: 5px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--ink-soft);
+  }
+
+  .scenario-pill:hover { background: var(--bg-soft); }
+  .scenario-pill.active {
+    background: var(--ink);
+    color: var(--bg-card);
+    border-color: var(--ink);
+  }
+
+  /* ===== LAYOUT ===== */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    grid-template-rows: 1fr 280px;
+    height: calc(100vh - 56px);
+    gap: 0;
+  }
+
+  .canvas-wrap {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+    /* 主画布：最深背景，营造焦点感 */
+    background:
+      radial-gradient(ellipse at center, #0d0f12 0%, #07080a 100%);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .canvas-wrap:active { cursor: grabbing; }
+
+  .info-panel {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    /* 面板：稍亮以与画布形成对比 */
+    background: var(--bg-card);
+    border-left: 1px solid var(--line-strong);
+    overflow-y: auto;
+    padding: 24px 26px;
+  }
+
+  .controls-wrap {
+    grid-column: 1;
+    grid-row: 2;
+    /* 控制区：与面板同色，与画布拉开层次 */
+    background: var(--bg-card);
+    border-top: 1px solid var(--line-strong);
+    overflow-y: auto;
+    padding: 16px 24px;
+  }
+
+  /* ===== CANVAS / SVG ===== */
+  #canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .canvas-overlay {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    pointer-events: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    letter-spacing: 0.05em;
+  }
+
+  .canvas-legend {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    width: 200px;
+    pointer-events: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--ink-mute);
+    background: rgba(20,22,26,0.92);
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    padding: 10px 12px;
+    backdrop-filter: blur(8px);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-line {
+    width: 14px; height: 2px;
+    flex-shrink: 0;
+  }
+
+  .canvas-controls {
+    position: absolute;
+    bottom: 16px;
+    right: 20px;
+    display: flex;
+    gap: 6px;
+  }
+
+  .canvas-btn {
+    width: 30px; height: 30px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-mute);
+    font-size: 14px;
+    transition: all 0.15s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .canvas-btn:hover {
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
+
+  /* SVG node styles */
+  .node-group { cursor: grab; }
+  .node-group:active { cursor: grabbing; }
+
+  /* 级联动画：节点波纹式淡入（SVG group 已通过 translate 定位，不能在 transform 里再加 scale，会打架）*/
+  /* 改用 opacity 双阶段过渡模拟"波纹"效果 */
+  @keyframes nodeFadeIn {
+    0% { opacity: 0.12; }
+    100% { opacity: 1; }
+  }
+
+  /* 节点圆的"脉冲"——通过 stroke-width 的 keyframe 单独做 */
+  @keyframes nodePulse {
+    0% { stroke-width: 1.8; }
+    40% { stroke-width: 4; }
+    100% { stroke-width: 1.8; }
+  }
+
+  /* 边的"生长"——从起点画到终点 */
+  /* 配合 stroke-dasharray="100 100" pathLength="100"，offset 100→0 实现 */
+  @keyframes edgeGrow {
+    0% { stroke-dashoffset: 100; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  /* 箭头延迟出现——边生长 80% 完成时浮现 */
+  @keyframes arrowAppear {
+    0%, 70% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  /* 三因子视图：动画结束后非该因子节点平滑淡化 */
+  @keyframes factorFadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0.18; }
+  }
+
+  .node-circle {
+    transition: r 0.3s cubic-bezier(0.4, 0, 0.2, 1), stroke-width 0.2s;
+  }
+
+  .node-group:hover .node-circle {
+    stroke-width: 2.5;
+  }
+
+  .node-label {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    pointer-events: none;
+    fill: var(--ink);
+  }
+
+  .node-sublabel {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    fill: var(--ink-mute);
+    pointer-events: none;
+  }
+
+  .node-arrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    pointer-events: none;
+  }
+
+  .edge {
+    transition: all 0.3s ease;
+    pointer-events: stroke;
+    cursor: pointer;
+  }
+
+  .edge:hover {
+    stroke-width: 2.5;
+  }
+
+  .edge-pulse {
+    animation: edgePulse 1.5s ease-out;
+  }
+
+  @keyframes edgePulse {
+    0% { stroke-opacity: 0.2; stroke-width: 1; }
+    50% { stroke-opacity: 1; stroke-width: 3; }
+    100% { stroke-opacity: 0.4; stroke-width: 1.5; }
+  }
+
+  .layer-ring {
+    fill: none;
+    stroke-dasharray: 2 4;
+    pointer-events: none;
+  }
+
+  .layer-ring-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    fill: var(--ink-faint);
+    pointer-events: none;
+    text-transform: uppercase;
+  }
+
+  /* ===== INFO PANEL ===== */
+  .info-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    height: 100%;
+    color: var(--ink-mute);
+  }
+
+  .info-empty-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 400;
+    margin-bottom: 12px;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .info-empty-body {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin-bottom: 20px;
+  }
+
+  .info-empty-hints {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  .info-empty-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    padding: 10px 12px;
+    background: var(--bg-soft);
+    border-left: 2px solid var(--accent-soft);
+    line-height: 1.5;
+  }
+
+  .info-empty-hint b { color: var(--ink); font-weight: 500; }
+
+  .info-header {
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .info-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+  }
+
+  .info-layer-badge {
+    padding: 2px 7px;
+    border-radius: 2px;
+    font-weight: 500;
+  }
+
+  .info-title {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .info-en {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-mute);
+  }
+
+  .info-state {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--bg-soft);
+    border-radius: 4px;
+  }
+
+  .info-state-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-mute);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .info-state-val {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .info-state-arrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .arrow-up { color: var(--green-up); }
+  .arrow-down { color: var(--red-down); }
+  .arrow-flat { color: var(--ink-mute); }
+
+  .info-section {
+    margin-bottom: 20px;
+  }
+
+  .info-section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .info-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .info-body {
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--ink-soft);
+  }
+
+  .info-body strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* drivers */
+  .driver-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-soft);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .driver-item:hover {
+    background: var(--bg-deep);
+  }
+
+  .driver-arrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .driver-name {
+    flex: 1;
+    font-size: 12px;
+    color: var(--ink);
+  }
+
+  .driver-impact {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+  }
+
+  /* connections */
+  .connection {
+    padding: 12px 14px;
+    background: var(--bg-soft);
+    border-left: 2px solid var(--line-strong);
+    border-radius: 0 3px 3px 0;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .connection:hover {
+    background: var(--bg-deep);
+    border-left-color: var(--accent);
+  }
+
+  .connection-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .connection-target {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .connection-strength {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+  }
+
+  .connection-mech {
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+
+  /* evidence */
+  .evidence {
+    padding: 12px 14px;
+    background: var(--bg-soft);
+    border-radius: 3px;
+    margin-bottom: 8px;
+    border-left: 2px solid var(--accent-soft);
+  }
+
+  .evidence-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .evidence-source {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .evidence-year {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-mute);
+  }
+
+  .evidence-body {
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  /* ===== CONTROLS ===== */
+  .controls-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .controls-title {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .controls-title-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-mute);
+    margin-left: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  .reset-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    background: none;
+    border: 1px solid var(--line-strong);
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .reset-btn:hover {
+    color: var(--ink);
+    border-color: var(--ink-mute);
+  }
+
+  .levers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px 24px;
+  }
+
+  .lever {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lever-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .lever-name {
+    font-size: 12px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .lever-en {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-mute);
+    margin-left: 6px;
+  }
+
+  .lever-val {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .lever-val-delta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    margin-left: 4px;
+  }
+
+  /* slider */
+  .slider-wrap {
+    position: relative;
+    height: 28px;
+    display: flex;
+    align-items: center;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--ink);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--ink);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+  }
+
+  .slider-marks {
+    position: absolute;
+    top: 22px;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: var(--ink-faint);
+    pointer-events: none;
+  }
+
+  .slider-baseline {
+    position: absolute;
+    top: 12px;
+    width: 1px;
+    height: 8px;
+    background: var(--accent);
+    pointer-events: none;
+  }
+
+  /* scenarios */
+  .scenarios-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .scenarios-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-mute);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-right: 4px;
+    align-self: center;
+  }
+
+  .scenarios-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--line-strong);
+    margin: 0 4px;
+  }
+
+  /* 历史情景：带特殊视觉提示 */
+  .scenario-pill.scenario-historical {
+    border-color: var(--accent);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+  }
+
+  .scenario-pill.scenario-historical:hover {
+    background: var(--accent-soft);
+  }
+
+  .scenario-pill.scenario-historical.active {
+    background: var(--accent);
+    color: var(--bg-card);
+    border-color: var(--accent);
+  }
+
+  /* note for non-standard scenarios */
+  .scenario-note {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--l3-soft);
+    border-radius: 3px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    border-left: 2px solid var(--l3);
+    display: none;
+  }
+
+  .scenario-note.show { display: block; }
+
+  .scenario-note-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--l3);
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  /* tooltip on edge hover */
+  .edge-tooltip {
+    position: absolute;
+    background: var(--bg-card);
+    border: 1px solid var(--line-strong);
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+    pointer-events: none;
+    z-index: 100;
+    max-width: 200px;
+    line-height: 1.4;
+    display: none;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-mute); }
+
+  /* ===== VIEW MODES SWITCHER ===== */
+  .view-modes {
+    position: absolute;
+    top: 140px;  /* 在 canvas-overlay 下方 */
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(20,22,26,0.92);
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    padding: 10px 12px;
+    backdrop-filter: blur(8px);
+    width: 168px;
+    z-index: 5;
+  }
+
+  .view-modes-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-soft);
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .view-mode-btn {
+    padding: 8px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .view-mode-btn:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--line-strong);
+  }
+
+  .view-mode-btn.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+
+  .view-mode-name {
+    font-size: 11px;
+    color: var(--ink);
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+
+  .view-mode-btn.active .view-mode-name {
+    color: var(--accent);
+  }
+
+  .view-mode-desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    color: var(--ink-mute);
+    letter-spacing: 0.02em;
+  }
+
+  .factor-filter {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .factor-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-mute);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+
+  .factor-pill:hover {
+    color: var(--ink);
+  }
+
+  .factor-pill.active {
+    background: var(--fc, var(--ink));
+    color: #0a0b0d;
+    border-color: var(--fc, var(--ink));
+    font-weight: 600;
+  }
+
+  /* ===== TUTORIAL ===== */
+    position: fixed;
+    inset: 0;
+    background: rgba(7,8,10,0.85);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: tutFadeIn 0.3s ease;
+  }
+
+  .tutorial-overlay.active { display: flex; }
+
+  @keyframes tutFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .tutorial-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    max-width: 540px;
+    width: 100%;
+    padding: 28px 32px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    animation: tutSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes tutSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .tutorial-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .tutorial-step-indicator {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .tutorial-skip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-mute);
+    background: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: color 0.15s;
+  }
+
+  .tutorial-skip:hover { color: var(--ink); }
+
+  .tutorial-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  .tutorial-body {
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--ink-soft);
+    margin-bottom: 24px;
+    min-height: 120px;
+  }
+
+  .tutorial-body strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .tutorial-body code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--bg-soft);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  .tutorial-body .tut-example {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--bg-soft);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 3px 3px 0;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .tutorial-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .tutorial-back, .tutorial-next {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+
+  .tutorial-back {
+    background: none;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-mute);
+  }
+
+  .tutorial-back:hover:not(:disabled) {
+    color: var(--ink);
+    border-color: var(--ink-mute);
+  }
+
+  .tutorial-back:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .tutorial-next {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #0a0b0d;
+    font-weight: 500;
+  }
+
+  .tutorial-next:hover {
+    filter: brightness(1.1);
+  }
+
+  .tutorial-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .tut-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--line-strong);
+    transition: all 0.2s;
+  }
+
+  .tut-dot.active {
+    background: var(--accent);
+    width: 18px;
+    border-radius: 3px;
+  }
+
+  /* Tutorial trigger button */
+  .tutorial-trigger {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #0a0b0d;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+
+  .tutorial-trigger:hover {
+    transform: scale(1.1);
+  }
+
+  /* 署名水印 */
+  .signature-watermark {
+    position: fixed;
+    bottom: 12px;
+    left: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: var(--ink-mute);
+    letter-spacing: 0.08em;
+    z-index: 50;
+    pointer-events: auto;
+    transition: color 0.2s;
+  }
+
+  .signature-watermark a {
+    color: var(--ink-soft);
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .signature-watermark a:hover {
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">全球宏观经济联动系统</div>
+  <div class="brand-tag">v2 · INTERACTIVE</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-actions">
+    <span id="liveStatus">22 节点 · 5 层环 · 实时联动</span>
+    <span style="margin-left:14px;padding-left:14px;border-left:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-mute);letter-spacing:0.05em">
+      by <a href="https://github.com/wolf-cool" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-weight:500" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">wolf_cool</a>
+    </span>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- CANVAS -->
+  <div class="canvas-wrap">
+    <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <div class="canvas-overlay">
+      <div>径向网络视图 · RADIAL NETWORK</div>
+      <div style="margin-top:4px;color:var(--ink-faint)">中心 = 全球流动性 · 外环 = 资产定价</div>
+      <div style="margin-top:8px;color:var(--ink-faint);font-size:9px;line-height:1.6">
+        ▸ 滚轮：缩放 40%-250%<br>
+        ▸ 拖动空白处：平移画布<br>
+        ▸ 拖动节点：在所属层环上调整位置<br>
+        ▸ 点击节点：查看详情 · 点击连线：传导机制
+      </div>
+    </div>
+
+    <div class="canvas-legend">
+      <div style="font-weight:600;color:var(--ink);margin-bottom:4px;font-size:11px;letter-spacing:0.02em">指标变化</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--green-up)"></span>↑ 上升 / 利多</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--red-down)"></span>↓ 下降 / 利空</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--neutral)"></span>→ 中性 / 不显著</div>
+      <div style="font-weight:600;color:var(--ink);margin:6px 0 4px;padding-top:6px;border-top:1px solid var(--line);font-size:11px;letter-spacing:0.02em">连线类型</div>
+      <div class="legend-item"><span class="legend-line" style="background:var(--ink-soft)"></span>因果·正向 (实线)</div>
+      <div class="legend-item"><span class="legend-line" style="background:var(--ink-soft);height:0;border-top:2px dashed var(--ink-soft)"></span>因果·负向 (长虚)</div>
+      <div class="legend-item"><span class="legend-line" style="background:var(--ink-soft);height:0;border-top:2px dashed var(--ink-soft)"></span>依环境 (中虚)</div>
+      <div class="legend-item"><span class="legend-line" style="background:#5b9bd5"></span>共振·双向 (蓝实线)</div>
+      <div class="legend-item" style="margin-top:4px;padding-top:4px;border-top:1px dashed var(--line)"><span style="font-size:9px;color:var(--ink-mute);letter-spacing:0.02em">► 单箭头=因果方向 · ←→双箭头=共振</span></div>
+    </div>
+
+    <!-- 视图模式切换 -->
+    <div class="view-modes" id="viewModes">
+      <div class="view-modes-label">视图模式</div>
+      <div class="view-mode-btn active" data-mode="layers" onclick="setViewMode('layers')">
+        <div class="view-mode-name">5层架构</div>
+        <div class="view-mode-desc">货币·宏观·政策·市场·定价</div>
+      </div>
+      <div class="view-mode-btn" data-mode="factors" onclick="setViewMode('factors')">
+        <div class="view-mode-name">三因子视图</div>
+        <div class="view-mode-desc">增长 · 通胀 · 流动性</div>
+      </div>
+      <!-- 三因子激活后展开 -->
+      <div class="factor-filter" id="factorFilter" style="display:none">
+        <div class="factor-pill" data-factor="all" onclick="setFactorFilter('all')">全部</div>
+        <div class="factor-pill" data-factor="growth" onclick="setFactorFilter('growth')" style="--fc:#7eb8d8">增长</div>
+        <div class="factor-pill" data-factor="inflation" onclick="setFactorFilter('inflation')" style="--fc:#e57373">通胀</div>
+        <div class="factor-pill" data-factor="liquidity" onclick="setFactorFilter('liquidity')" style="--fc:#b8a8e0">流动性</div>
+      </div>
+    </div>
+
+    <div class="canvas-controls">
+      <button class="canvas-btn replay-btn" id="replayBtn" onclick="startCascadeAnimation()" title="重播传导动画" style="display:none;width:auto;padding:0 10px;background:var(--accent);color:#0a0b0d;border-color:var(--accent);font-weight:600">
+        <span style="font-size:11px">▶ 重播</span>
+      </button>
+      <button class="canvas-btn" onclick="zoomIn()" title="放大 (滚轮向上)">+</button>
+      <button class="canvas-btn" onclick="zoomOut()" title="缩小 (滚轮向下)">−</button>
+      <span id="zoomIndicator" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-mute);align-self:center;padding:0 8px">100%</span>
+      <button class="canvas-btn" onclick="resetView()" title="重置视图（位置+缩放+布局）">⟲</button>
+    </div>
+
+    <div class="edge-tooltip" id="edgeTooltip"></div>
+  </div>
+
+  <!-- INFO PANEL -->
+  <div class="info-panel" id="infoPanel">
+    <div class="info-empty">
+      <div class="info-empty-title">理解市场如何运作<br>从联动开始</div>
+      <div class="info-empty-body">
+        这是一个由 22 个核心节点组成的互动网络。每个节点都基于真实的实证研究确定其与其他节点的传导系数。
+      </div>
+      <div class="info-empty-hints">
+        <div class="info-empty-hint">
+          <b>① 拖动下方杠杆</b><br>观察整个网络如何级联响应
+        </div>
+        <div class="info-empty-hint">
+          <b>② 点击任意节点</b><br>查看其驱动因素、影响下游和实证依据
+        </div>
+        <div class="info-empty-hint">
+          <b>③ 试试预设情景</b><br>"滞胀"、"硬着陆"、"中国刺激" 等真实历史情境
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls-wrap">
+    <div class="controls-header">
+      <div>
+        <span class="controls-title">宏观情景模拟器</span>
+        <span class="controls-title-tag">SCENARIO SIMULATOR · 真实研究系数</span>
+      </div>
+      <button class="reset-btn" onclick="resetLevers()">RESET TO BASELINE</button>
+    </div>
+
+    <div class="levers" id="leversContainer"></div>
+
+    <div class="scenarios-row">
+      <span class="scenarios-label">PRESET ▸</span>
+      <div class="scenario-pill" onclick="loadScenario('baseline')">基准</div>
+      <span class="scenarios-divider"></span>
+      <div class="scenario-pill scenario-historical" onclick="loadScenario('stagflation_1974')">滞胀 1974</div>
+      <div class="scenario-pill scenario-historical" onclick="loadScenario('volcker_1981')">Volcker 1981</div>
+      <div class="scenario-pill scenario-historical" onclick="loadScenario('gfc_2008')">金融危机 2008</div>
+      <div class="scenario-pill scenario-historical" onclick="loadScenario('covid_2020')">COVID 2020</div>
+      <span class="scenarios-divider"></span>
+      <div class="scenario-pill" onclick="loadScenario('stagflation')">假设·滞胀</div>
+      <div class="scenario-pill" onclick="loadScenario('recession')">假设·硬着陆</div>
+      <div class="scenario-pill" onclick="loadScenario('china_stimulus')">中国刺激</div>
+      <div class="scenario-pill" onclick="loadScenario('tariff_war')">关税升级</div>
+      <div class="scenario-pill" onclick="loadScenario('goldilocks')">软着陆</div>
+    </div>
+
+    <div class="scenario-note" id="scenarioNote">
+      <div class="scenario-note-title" id="scenarioNoteTitle"></div>
+      <div id="scenarioNoteBody"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TUTORIAL OVERLAY -->
+<div class="tutorial-overlay" id="tutorialOverlay">
+  <div class="tutorial-card">
+    <div class="tutorial-progress">
+      <span class="tutorial-step-indicator">STEP <span id="tutStepNum">1</span> / 6</span>
+      <button class="tutorial-skip" onclick="skipTutorial()">跳过</button>
+    </div>
+    <div class="tutorial-title" id="tutTitle"></div>
+    <div class="tutorial-body" id="tutBody"></div>
+    <div class="tutorial-footer">
+      <button class="tutorial-back" id="tutBack" onclick="prevTutorial()">← 上一步</button>
+      <div class="tutorial-dots" id="tutDots"></div>
+      <button class="tutorial-next" id="tutNext" onclick="nextTutorial()">下一步 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TUTORIAL TRIGGER BUTTON -->
+<button class="tutorial-trigger" onclick="startTutorial()" title="打开教程">
+  <span style="font-size:11px">?</span>
+</button>
+
+<!-- 署名水印 -->
+<div class="signature-watermark">
+  <span style="opacity:0.5">©</span> <a href="https://github.com/wolf-cool" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">wolf_cool</a> <span style="opacity:0.4">· 2026</span>
+</div>
+
+<script src="data.js"></script>
+<script src="model.js"></script>
+<script src="render.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
