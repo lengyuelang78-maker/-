@@ -147,7 +147,7 @@ python3 build.py  # 生成 global_macro_interactive.html
 
 ```
 wolf_cool. (2026). Global Macro Interactive: A Causal Network for Macro Transmission.
-https://github.com/wolf-cool/global-macro-interactive
+https://github.com/wolf_cool/global-macro-interactive
 ```
 
 ---
@@ -158,4 +158,4 @@ MIT — 自由使用、修改、分发，但请保留原作者署名。
 
 ---
 
-*Built by [wolf_cool](https://github.com/wolf-cool)* · *Made with friction, not vibes.*
+*Built by [wolf_cool](https://github.com/wolf_cool)* · *Made with friction, not vibes.*
